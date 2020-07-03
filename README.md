@@ -7,15 +7,15 @@ Added the correct support plugins and indentation for square, round and curly br
 So far, it will indent your code correctly, however, it won't spot the incorrect bracket indentation.
 For example 
 
-filter{
-  grok {
-    match =>{
-      "message" => [
-  
+    filter{
+      grok {
+        match =>{
+          "message" => [
+
+          }
+        ]
       }
-    ]
-  }
-}
+    }
 Although it is clear that the square bracket should be before }. It won't correct it.
 I have some thoughts of making it work.
 Will graduately add support for this.

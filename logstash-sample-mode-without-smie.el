@@ -4,8 +4,10 @@
 ;;;https://github.com/Wilfred/logstash-conf.el is very slow when calculating indentation.
 ;;;In most of cases we only need a simple looking back indentation algorithm and this simple does that
 
-;;;Also I have tried smie implementation and for some reason it won't indent comment correctly.
-;;;I might re-try that at somepoint
+;;;After a lot of testing and reading, finally got most of the functionality in place.
+;;;It is unlikely that I will update this further.
+;;;It should capture most of the cases if necessary, except some extreme case.
+;;;I don't think anyone will write logstash in these extreme cases.
 
 (defmacro logstash-sample-debug (&rest _args))
 (defvar logstash-sample-mode-hook nil)
@@ -20,6 +22,11 @@
   :type 'integer
   :group 'logstash-sample-mode)
 (put 'logstash-sample-indent-width 'safe-local-variable 'integerp)
+
+(defcustom logstash-sample-comment-column 32
+  "*Indentation column of comments."
+  :type 'integer :group 'logstash-sample-mode)
+(put 'logstash-sample-comment-column 'safe-local-variable 'integerp)
 
 (defvar logstash-sample-builtin-variables
   '("if"
@@ -105,10 +112,39 @@
    `(,logstash-sample-variables-regexp . ,font-lock-constant-face))
   "Default highlighting expressions for LOGSTASH-SAMPLE mode.")
 
+;;This is very important for matching syntax, i.e. { and } with correct table defined we can skip the mismatch in comment for example. Important
+;;This is copied from ruby-mode
 (defvar logstash-sample-mode-syntax-table
   (let ((logstash-sample-mode-syntax-table (make-syntax-table)))
     (modify-syntax-entry ?_ "w" logstash-sample-mode-syntax-table)
     (modify-syntax-entry ?\n "> b" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\' "\"" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\" "\"" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\` "\"" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?# "<" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\n ">" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\\ "\\" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?$ "'" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?_ "_" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?: "'" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?@ "'" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?< "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?> "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?& "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?| "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?% "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?= "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?/ "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?+ "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?* "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?- "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\; "." logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\( "()" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\) ")(" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\{ "(}" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\} "){" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\[ "(]" logstash-sample-mode-syntax-table)
+    (modify-syntax-entry ?\] ")[" logstash-sample-mode-syntax-table)
     logstash-sample-mode-syntax-table)
   "Syntax table for logstash-sample-mode.")
 
@@ -181,38 +217,39 @@
      ((eq current 'brace-close)
       (indent-line-to (save-excursion
                         (beginning-of-line)
-                        (looking-at "^[ \t]*}")
-			(looking-at "^[ \t]*\\]")
-			(looking-at "^[ \t]*)")
+                        (looking-at "^[ \t]*[]})].*")
                         (goto-char (match-end 0))
                         (ignore-errors
                           (backward-list 1))
                         (current-indentation))))
      ((eq current 'brace-close-open)
       (indent-line-to (save-excursion
-                        (goto-char (cdr (assoc 'brace-open parent-list)))
+                        (goto-char (cdr (assoc 'brace-open parent-list))) ;something(
                         (current-indentation))))
-     ;; ((eq current 'default)
-     ;;  (indent-line-to indent-base))
-     ;; ((eq current 'line-cont-begin)
-     ;;  (indent-line-to indent-base))
-     ;; ((eq current 'brace-open)
-     ;;  (indent-line-to indent-base))
      (t
       (indent-line-to indent-base))
      )))
 
+;;This is mostly copied derived from prog-mode will have good bracket match highlight function work out of boxes
 (define-derived-mode logstash-sample-mode prog-mode "logstash-sample"
   "A major mode for logstash-sample."
   :syntax-table logstash-sample-mode-syntax-table
-  (setq-local comment-start "# ")
-  (setq-local comment-end "")
-  ;(setq-local comment-start-skip "#+\\s-*")
   (setq-local font-lock-defaults
               '(logstash-sample-font-lock-keywords))
   (setq-local indent-line-function 'logstash-sample-indent-line)
+  (setq-local comment-column logstash-sample-comment-column)
+  (setq-local comment-start "\s-*# ")
+  (setq-local comment-end "")
+  (setq-local comment-start-skip "#+ *")
+  (setq-local erm-buff-num                 nil)
+  (setq-local erm-e-w-status               nil)
+  (setq-local erm-full-parse-p             nil)
+  (setq-local paragraph-ignore-fill-prefix t)
+  (setq-local parse-sexp-ignore-comments   t)
+  (setq-local parse-sexp-lookup-properties t)
   (run-hooks 'logstash-sample-mode-hook))
 
+;;Orders of these indentation function matters as early cases are more restricted, and latter cases are less constraining.
 (defun logstash-sample-parse-line (add-default)
   (let ((result))
     (cond
@@ -229,42 +266,43 @@
           (if prev-cont
               (add-to-list 'result `(line-cont . ,(1- (point))))
             (add-to-list 'result `(line-cont-begin . ,(1- (point))))))))
-     ((looking-back "^[ \t]*}.*[ \t]*{$" (line-beginning-position))
+     ;;This will match all the }{ or )( or ][ it's will not detect ]( problem at moment
+     ((looking-back "^[ \t]*[]})]+.*[ \t]*[{\\[(]+$" (line-beginning-position))
       (progn
         (goto-char (match-end 0))
-        (add-to-list 'result `(brace-close-open . ,(1- (point))))))
-     ((looking-back "^.*[ \t]*{" (line-beginning-position))
+        (add-to-list 'result `(line-cont . ,(1- (point))))))
+     ;;This matches most of ""{} case although it won't detect several cases with {{] for example.
+     ((or (looking-back "^\s-*\".*\".*[{\\[(]+.*[]})]+[ ]*$" (line-beginning-position))
+	  (looking-back "^\s-*\".*\".*[{\\[(]+.*[]})]+[ ]*[#]+.*" (line-beginning-position))
+	  (looking-back "^\s-*\".*\"[^[{(]*[#]+" (line-beginning-position)))
       (progn
-        (goto-char (match-end 0))
+	(goto-char (match-end 0))
+	(add-to-list 'result `(line-cont . ,(1- (point))))))
+     ;;This will detect most non comment, "" { cases and make sure it indent correctly
+     ((looking-back "^[ \t]*\".*\"[^#]*[{\\[(]+" (line-beginning-position))
+      (progn
+	(goto-char (match-end 0))
+	(add-to-list 'result `(brace-open . ,(1- (point))))))
+     ;;This will detect most of [] cases 
+     ((or (looking-back "^[ \t]*.*[{\\[(]+.*[]})]+[ ]*$" (line-beginning-position))
+	  (looking-back "^[ \t]*.*[{\\[(]+.*[]})]+[ ]*[#]+.*" (line-beginning-position)))
+      (progn
+	(goto-char (match-end 0))
+        (add-to-list 'result `(line-cont . ,(1- (point))))))
+     ;;This will take care of most { cases make it indent properly
+     ((and (looking-back "^[ \t]*.*[{\\[(]+.*" (line-beginning-position))
+	   (not (looking-back "^[ \t]*#.*" (line-beginning-position)))
+	   (not (looking-back "^\s-*#.*" (line-beginning-position)))
+	   (not (looking-back "^[ \t]*\".*" (line-beginning-position)))
+	   (not (looking-back "^\s-*\".*" (line-beginning-position))))      
+      (progn
+	(goto-char (match-end 0))
         (add-to-list 'result `(brace-open . ,(1- (point))))))
-     ((looking-back "^[ \t]*}$" (line-beginning-position))
+     ;;This will take care of close brackets.
+     ((looking-back "^[ \t]*[]})]+.*" (line-beginning-position))
       (progn
         (goto-char (match-end 0))
         (add-to-list 'result `(brace-close . ,(1- (point))))))
-     ((looking-back "^[ \t]*\\].*[ \t]*\\[$" (line-beginning-position))
-      (progn
-        (goto-char (match-end 0))
-        (add-to-list 'result `(brace-close-open . ,(1- (point))))))
-     ((looking-back "^.*[ \t]*\\[" (line-beginning-position))
-      (progn
-        (goto-char (match-end 0))
-        (add-to-list 'result `(brace-open . ,(1- (point))))))
-     ((looking-back "^[ \t]*\\]$" (line-beginning-position))
-      (progn
-        (goto-char (match-end 0))
-        (add-to-list 'result `(brace-close . ,(1- (point))))))
-     ((looking-back "^[ \t]*).*[ \t]*($" (line-beginning-position))
-      (progn
-        (goto-char (match-end 0))
-        (add-to-list 'result `(brace-close-open . ,(1- (point))))))
-     ((looking-back "^.*[ \t]*(" (line-beginning-position))
-      (progn
-        (goto-char (match-end 0))
-        (add-to-list 'result `(brace-open . ,(1- (point))))))
-     ((looking-back "^[ \t]*)$" (line-beginning-position))
-      (progn
-        (goto-char (match-end 0))
-        (add-to-list 'result `(brace-close . ,(1- (point))))))     
      (t
       (let ((orig-point (point))
             (prev-line-cont

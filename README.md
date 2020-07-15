@@ -1,5 +1,6 @@
 # logstash-sample-mode
-logstash-conf-mode recreated version
+logstash-conf-mode recreated version.
+I call it logstash-sample-mode so one can easily tell the differences.
 
 I took most of the code from https://github.com/inlinechan/qmake-mode and the ruby-mode. 
 As they are very close.

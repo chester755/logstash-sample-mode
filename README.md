@@ -20,9 +20,10 @@ As shown in the example blow:
 
 Version notes:
 
-v0.0.1 Added basic match and indentation function
+v0.0.1 Added basic match and indentation function.
+
 v0.0.2 Fixed a lot of bugs when dealing with comment in same line as code. Also fixed the syntax table, so it will ignore braces in comment block.
 
 Feature roadmap:
 
-v0.1.0 Will hopefully fix the bracket mismatch, (i.e. only correct indentation for correct brace match)
+v0.1.0 Will hopefully fix the bracket mismatch, (i.e. only correct indentation for correct brace match).

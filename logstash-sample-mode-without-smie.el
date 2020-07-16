@@ -31,7 +31,11 @@
 (defvar logstash-sample-builtin-variables
   '("if"
     "else if"
-    "else")
+    "else"
+    "filter"
+    "input"
+    "output"
+    )
   "Logstash-Sample builtin."
   )
 
@@ -96,6 +100,15 @@
     "periodic_flush"
     "remove_field"
     "remove_tag"
+    "match"
+    "patterns_dir"
+    "patterns_files_glob"
+    "tag_on_failure"
+    "tag_on_timeout"
+    "named_captures_only"
+    "overwrite"
+    "break_on_match"
+    "keep_empty_captures"
     )
   "Logstash-Sample common configurations"
   )

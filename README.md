@@ -1,9 +1,8 @@
 # logstash-sample-mode
-logstash-conf-mode recreated version.
-I call it logstash-sample-mode so one can easily tell the differences.
+This is an emacs mode which is recreated version of logstash-conf-mode, for logstash filter.
+I call it logstash-sample-mode so people won't get confused.
 
-I took most of the code from https://github.com/inlinechan/qmake-mode and the ruby-mode. 
-As they are very close.
+I took majority of the code from https://github.com/inlinechan/qmake-mode and the ruby-mode with some modification to make it work.
 
 The latest version support most of the brackets matches. 
 So far, it will indent your code correctly, however, it won't spot the incorrect bracket indentation.
@@ -27,4 +26,4 @@ v0.0.2 Fixed a lot of bugs when dealing with comment in same line as code. Also 
 
 Feature roadmap:
 
-v0.1.0 Will hopefully fix the bracket mismatch, (i.e. only correct indentation for correct brace match).
+v0.1.0 Will hopefully fix the bracket mismatch (i.e. only correct indentation for correct brace match). and performance issue with large file (which is the whole point of creating this project), I think the key is replacing looking-back function.

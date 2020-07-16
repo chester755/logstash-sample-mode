@@ -1,5 +1,5 @@
 # logstash-sample-mode
-This is an emacs mode which is recreated version of logstash-conf-mode, for logstash filter.
+This is a basic emacs mode which is recreated version of logstash-conf-mode, for logstash filter.
 I call it logstash-sample-mode so people won't get confused.
 
 I took majority of the code from https://github.com/inlinechan/qmake-mode and the ruby-mode with some modification to make it work.
